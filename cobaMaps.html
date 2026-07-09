@@ -1,0 +1,1781 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SENATOR Merchant Accelerator Hub - Bank Mandiri Graha Irama</title>
+    
+    <!-- Tailwind CSS untuk tata letak modern -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet untuk pemilihan titik lokasi -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Font Awesome 6 untuk Icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Font Google Inter & Montserrat -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            background-color: #ffffff; 
+            font-family: 'Inter', sans-serif; 
+            color: #1e293b;
+        }
+        .font-montserrat {
+            font-family: 'Montserrat', sans-serif;
+        }
+        .leaflet-container {
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f8fafc;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-3 md:p-6 lg:p-8 flex flex-col justify-between max-w-[1600px] mx-auto bg-white">
+
+    <!-- HEADER UTAMA -->
+    <header class="mb-6 bg-white border border-slate-200 rounded-2xl p-4 md:p-6 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <!-- Logo Bank Mandiri dari file images (6).jpg -->
+            <div class="bg-white p-1 rounded-lg border border-slate-100 shadow-sm">
+                <img src="./logoBankMandiri.png" alt="Logo Bank Mandiri" class="w-auto object-contain" style="max-width: 100px; height: auto;" onerror="this.onerror=null; this.src='https://placehold.co/150x50/003366/FFFFFF?text=Mandiri';">
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-black text-slate-900 tracking-wide font-montserrat flex flex-wrap items-center gap-2">
+                    SENATOR Merchant Accelerator Hub
+                    <span id="sync-status" class="bg-amber-50 text-amber-700 text-[10px] px-2.5 py-0.5 rounded-full font-semibold border border-amber-200 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></span> Connecting to Cloud...
+                    </span>
+                </h1>
+                <p class="text-xs md:text-sm text-slate-500 mt-1 flex items-center gap-1.5">
+                    <i class="fa-solid fa-map-pin text-rose-500"></i>
+                    Graha Irama Lantai Dasar, Jl. H.R. Rasuna Said Kav. X-1, No. 1-2, Setiabudi, Jakarta Selatan
+                </p>
+            </div>
+        </div>
+
+        <!-- Mode Switcher -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200 w-full lg:w-auto">
+            <button id="btn-mode-operational" onclick="switchView('operational')" class="flex-1 lg:flex-none flex items-center justify-center gap-2 text-xs font-bold py-2 px-4 rounded-lg transition-all bg-blue-700 text-white shadow-sm">
+                <i class="fa-solid fa-chart-line"></i> CRM Operasional &amp; Peta
+            </button>
+            <button id="btn-mode-strategy" onclick="switchView('strategy')" class="flex-1 lg:flex-none flex items-center justify-center gap-2 text-xs font-bold py-2 px-4 rounded-lg transition-all text-slate-600 hover:text-slate-900">
+                <i class="fa-solid fa-sliders"></i> Strategy Center (Slides)
+            </button>
+        </div>
+    </header>
+
+    <!-- VIEW OPERATIONAL -->
+    <div id="view-operational" class="flex flex-col gap-6">
+        
+        <!-- DASHBOARD METRIC STATS -->
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
+                <p class="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Total Prospek Kustom</p>
+                <p class="text-2xl font-black text-slate-800 mt-1 font-montserrat" id="stat-total">0</p>
+            </div>
+            <div class="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
+                <p class="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">QRIS Teraktivasi (Stage 6+)</p>
+                <p class="text-2xl font-black text-emerald-600 mt-1 font-montserrat" id="stat-activated">0</p>
+            </div>
+            <div class="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
+                <p class="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Tingkat Konversi Tim</p>
+                <p class="text-2xl font-black text-amber-500 mt-1 font-montserrat" id="stat-conversion">0%</p>
+            </div>
+            <div class="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
+                <p class="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Potensi CASA Terhitung</p>
+                <p class="text-lg md:text-xl font-black text-blue-700 mt-1 font-montserrat" id="stat-casa">Rp 0 Jt</p>
+            </div>
+            <div class="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
+                <p class="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Rata-rata Jarak Lokasi</p>
+                <p class="text-lg md:text-xl font-black text-violet-700 mt-1 font-montserrat" id="stat-avg-distance">0 m</p>
+            </div>
+        </div>
+
+        <!-- TIGA KOLOM UTAMA -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            
+            <!-- KOLOM 1: DIREKTORI TENANT & INPUT FORM (Kiri) -->
+            <div class="lg:col-span-4 flex flex-col bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden min-h-[600px]">
+                
+                <!-- Header Direktori & Pencarian -->
+                <div class="p-4 border-b border-slate-200 bg-slate-50/50">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-xs text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-blue-600"></i>
+                            Daftar Prospek Kustom
+                        </h3>
+                        <button onclick="toggleAddForm()" class="text-[11px] bg-blue-700 hover:bg-blue-800 text-white font-bold py-1 px-2.5 rounded-lg flex items-center gap-1 transition shadow-sm">
+                            <i class="fa-solid fa-plus"></i> Tambah Prospek
+                        </button>
+                    </div>
+
+                    <!-- Dropdown Form Tambah Prospek -->
+                    <div id="add-prospect-form" class="hidden bg-white p-4 rounded-xl border border-blue-200 mb-3 text-slate-700 space-y-2.5 shadow-sm">
+                        <p class="text-xs font-bold text-blue-800 flex items-center gap-1">
+                            <i class="fa-solid fa-map-location-dot text-amber-500"></i> Form Tambah Prospek Baru
+                        </p>
+                        <div>
+                            <label class="block text-[9px] text-slate-500 uppercase font-bold">Nama Bisnis / Instansi *</label>
+                            <input type="text" id="new-name" placeholder="Misal: Kopi Nusantara Graha" class="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 focus:outline-none focus:border-blue-600">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[9px] text-slate-500 uppercase font-bold">Kategori</label>
+                                <select id="new-type" class="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-800">
+                                    <option value="F&B">F&B</option>
+                                    <option value="Retail">Retail</option>
+                                    <option value="Jasa Professional">Jasa Professional</option>
+                                    <option value="Finansial">Finansial</option>
+                                    <option value="Medis / Farmasi">Medis / Farmasi</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[9px] text-slate-500 uppercase font-bold">Gedung / Area</label>
+                                <input type="text" id="new-floor" placeholder="Kuningan / Setiabudi" class="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[9px] text-slate-500 uppercase font-bold">Ruangan / Suite</label>
+                                <input type="text" id="new-room" placeholder="Suite GF-01" class="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900">
+                            </div>
+                            <div>
+                                <label class="block text-[9px] text-slate-500 uppercase font-bold">Estimasi Omzet Bulanan (Rp)</label>
+                                <input type="number" id="new-omzet" placeholder="e.g. 50000000" class="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900">
+                            </div>
+                        </div>
+
+                        <!-- INPUT ALAMAT & FOTO BARU -->
+                        <div>
+                            <label class="block text-[9px] text-slate-500 uppercase font-bold">Alamat Lengkap Merchant *</label>
+                            <textarea id="new-address" rows="2" placeholder="Jl. H.R. Rasuna Said No. X, Kuningan Timur, Setiabudi..." class="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 focus:outline-none focus:border-blue-600"></textarea>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-[9px] text-slate-500 uppercase font-bold">Pilih Lokasi / Cari Alamat</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="address-search" placeholder="Cari alamat atau nama tempat..." class="flex-1 bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 focus:outline-none focus:border-blue-600">
+                                <button type="button" onclick="searchAddress()" class="text-[10px] bg-slate-700 hover:bg-slate-800 text-white font-semibold px-2.5 py-1 rounded-lg">Cari</button>
+                            </div>
+                            <div id="address-picker-map" class="h-40 rounded-lg border border-slate-200"></div>
+                            <div class="text-[8px] text-slate-500">Klik peta untuk memilih titik lokasi, atau cari alamat lalu pilih hasilnya. Koordinat akan disimpan bersama alamat.</div>
+                            <div class="grid grid-cols-2 gap-2 text-[9px]">
+                                <div class="bg-slate-50 p-2 rounded-lg">
+                                    <div class="font-bold text-slate-600">Lat</div>
+                                    <div id="selected-lat-display">-</div>
+                                </div>
+                                <div class="bg-slate-50 p-2 rounded-lg">
+                                    <div class="font-bold text-slate-600">Lon</div>
+                                    <div id="selected-lon-display">-</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[9px] text-slate-500 uppercase font-bold mb-1">Unggah Foto Merchant</label>
+                            <input type="file" id="new-photo" accept="image/*" class="block w-full text-xs text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <span class="text-[8px] text-slate-400 block mt-0.5">Mendukung file JPG, PNG, atau WEBP.</span>
+                        </div>
+
+                        <div class="bg-amber-50/60 p-2.5 rounded-lg border border-amber-200">
+                            <span class="text-[9px] font-bold text-amber-800 block uppercase tracking-wider">
+                                <i class="fa-solid fa-map-location-dot"></i> Visualisasi Radar Maps
+                            </span>
+                            <span class="text-[8px] text-slate-500 block leading-tight mt-0.5">
+                                Masukkan alamat di atas, atau klik area pada **Peta Radar Interaktif** untuk memposisikan letak toko secara visual dan menghitung jaraknya otomatis!
+                            </span>
+                        </div>
+
+                        <div class="flex gap-2 justify-end pt-1">
+                            <button type="button" onclick="toggleAddForm()" class="text-[10px] hover:bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg">Batal</button>
+                            <button id="btn-save-prospect" type="button" onclick="submitProspect()" class="text-[10px] bg-blue-700 hover:bg-blue-800 text-white font-bold px-3 py-1 rounded-lg shadow-sm">Simpan Prospek</button>
+                        </div>
+                    </div>
+
+                    <!-- Pencarian & Filter -->
+                    <div class="space-y-2">
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                            </span>
+                            <input type="text" id="search-query" oninput="renderProspectList()" placeholder="Cari nama bisnis, area, tipe..." class="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-600">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- List Tenant Direktori -->
+                <div id="prospect-list" class="flex-grow overflow-y-auto divide-y divide-slate-100 max-h-[480px]">
+                    <!-- Konten diisi oleh JavaScript secara dinamis -->
+                    <div class="p-8 text-center text-slate-400">
+                        <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-2 text-blue-600"></i>
+                        <p class="text-xs">Sinkronisasi database...</p>
+                    </div>
+                </div>
+
+                <!-- Footer List Direktori -->
+                <div class="p-3 bg-slate-50 border-t border-slate-100 flex justify-between text-[10px] text-slate-500 font-medium">
+                    <span id="list-count-label">Memuat data...</span>
+                    <span class="flex items-center gap-1.5 text-blue-700 font-semibold">
+                        <span class="inline-block w-2 h-2 bg-blue-700 rounded-full"></span> 
+                        Zonasi Graha Irama
+                    </span>
+                </div>
+            </div>
+
+            <!-- KOLOM 2: MAP RADAR INTERAKTIF & PIPELINE LIFE CYCLE (Tengah) -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+                
+                <!-- PETA RADAR INTERAKTIF -->
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 flex flex-col">
+                    <div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-100">
+                        <div>
+                            <h3 class="font-bold text-xs text-slate-700 uppercase tracking-wider font-montserrat flex items-center gap-1.5">
+                                <i class="fa-solid fa-compass text-rose-500 animate-spin" style="animation-duration: 15s;"></i>
+                                Peta Radar Interaktif (Zonasi Graha Irama)
+                            </h3>
+                            <p class="text-[10px] text-slate-400">Peta mikro-distrik Kuningan Timur. Klik di area peta untuk memposisikan letak pin merchant secara langsung.</p>
+                        </div>
+                        <div class="flex gap-1.5 items-center">
+                            <button type="button" onclick="resetRadarMapView()" class="text-[9px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded border border-slate-200">Kembali ke Graha Irama</button>
+                            <span class="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Scale: 1.5 km</span>
+                        </div>
+                    </div>
+
+                    <!-- Wadah Peta Interaktif -->
+                    <div class="relative bg-slate-50 rounded-xl border border-slate-200 overflow-hidden" style="height: 320px;">
+                        <div id="radarMap" class="w-full h-full"></div>
+                        
+                        <!-- Mini Legend Overlay -->
+                        <div class="absolute bottom-2 left-2 bg-white/95 p-2 rounded-lg border border-slate-200 text-[8px] space-y-1 shadow-sm font-semibold text-slate-600">
+                            <div class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-amber-500 rounded-full inline-block border border-white"></span> Center (Graha Irama)</div>
+                            <div class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-blue-600 rounded-full inline-block border border-white"></span> Prospek Terdaftar</div>
+                            <div class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-emerald-500 rounded-full inline-block border border-white"></span> Merchant Aktif</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mb-2">Informasi Zona Radius</div>
+                        <div class="space-y-1.5 text-[10px] text-slate-600">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full border border-white" style="background:#60a5fa"></span> 500 m</span>
+                                <span class="text-slate-400">Zona sangat dekat</span>
+                            </div>
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full border border-white" style="background:#34d399"></span> 1 km</span>
+                                <span class="text-slate-400">Zona dekat</span>
+                            </div>
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full border border-white" style="background:#f59e0b"></span> 2 km</span>
+                                <span class="text-slate-400">Zona menengah</span>
+                            </div>
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full border border-white" style="background:#ef4444"></span> 5 km</span>
+                                <span class="text-slate-400">Zona luas</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 9-Stage Pipeline tracker -->
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+                    <h3 class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-4 flex items-center gap-1.5 font-montserrat">
+                        <i class="fa-solid fa-layer-group text-blue-700"></i>
+                        Senator Pipeline Lifecycle Tracker (X2)
+                    </h3>
+
+                    <!-- Stepper Grid 3x3 on mobile, 9 on desktop -->
+                    <div class="grid grid-cols-3 md:grid-cols-9 gap-1.5 mb-4" id="pipeline-stepper">
+                        <!-- Diisi secara dinamis oleh JavaScript -->
+                    </div>
+
+                    <!-- Navigasi Update Status -->
+                    <div class="flex flex-col sm:flex-row gap-2 justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <div class="text-xs text-slate-600 text-center sm:text-left">
+                            Tahap: <strong id="active-stage-title" class="text-slate-800 font-montserrat">Memuat...</strong>
+                            <p id="active-stage-desc" class="text-[10px] text-slate-500 truncate mt-0.5">Pilih prospek terlebih dahulu</p>
+                        </div>
+                        <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                            <button onclick="changeActiveStage(-1)" id="btn-prev-stage" class="flex-1 sm:flex-none text-[11px] bg-white hover:bg-slate-100 disabled:opacity-40 text-slate-700 font-bold py-1.5 px-2.5 rounded-lg border border-slate-300 transition shadow-sm">
+                                Kembali
+                            </button>
+                            <button onclick="changeActiveStage(1)" id="btn-next-stage" class="flex-1 sm:flex-none text-[11px] bg-blue-700 hover:bg-blue-800 disabled:opacity-40 text-white font-bold py-1.5 px-3 rounded-lg flex items-center justify-center gap-1 transition shadow-sm">
+                                Majukan <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KOLOM 3: ANALISIS SKOR & PLAYBOOK TAKTIS (Kanan) -->
+            <div class="lg:col-span-3 flex flex-col gap-6">
+                
+                <!-- Detail Profil & Live Scoring Parameter -->
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-4">
+                    <div class="border-b border-slate-100 pb-2 mb-3">
+                        <div class="flex justify-between items-start">
+                            <span id="active-type-badge" class="text-[9px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded uppercase">
+                                PROSPEK
+                            </span>
+                            <div class="text-right">
+                                <span id="active-score-value" class="text-lg font-black text-slate-800 block leading-tight">0%</span>
+                                <span id="active-priority-badge" class="text-[8px] font-bold px-1.5 py-0.2 rounded-full mt-0.5 inline-block text-slate-500 bg-slate-100">
+                                    Nihil
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Tempat Menampilkan Foto Terunggah -->
+                        <div class="my-3 w-full h-32 rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center relative">
+                            <img id="active-photo-display" src="" alt="Foto Merchant" class="w-full h-full object-cover hidden">
+                            <div id="active-photo-placeholder" class="text-center text-slate-400 p-2">
+                                <i class="fa-solid fa-image text-2xl block mb-1"></i>
+                                <span class="text-[9px] block font-medium">Belum ada foto terlampir</span>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-start gap-2">
+                            <h4 id="active-name" class="font-extrabold text-slate-800 text-sm truncate font-montserrat flex-grow">Tidak Ada Merchant Terpilih</h4>
+                            <button onclick="deleteSelectedProspect()" id="btn-delete-prospect" class="text-rose-500 hover:text-rose-700 p-1 text-xs hidden" title="Hapus Prospek">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Info Alamat Lengkap Terpilih -->
+                        <div class="mt-2 text-[10px] text-slate-500 border-t border-slate-100 pt-2 space-y-1">
+                            <p class="flex items-start gap-1">
+                                <i class="fa-solid fa-location-dot text-rose-500 mt-0.5 flex-shrink-0"></i>
+                                <span id="active-address-val" class="leading-relaxed">-</span>
+                            </p>
+                            <p class="flex items-center gap-1 font-bold text-slate-700">
+                                <i class="fa-solid fa-location-crosshairs text-blue-600"></i> Jarak: <span id="active-distance-val" class="font-bold text-slate-700">-</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Sliders tuning real-time (Initiative X1 Simulator) -->
+                    <div class="space-y-3">
+                        <p class="text-[9px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1">
+                            <i class="fa-solid fa-sliders"></i> Parameter Evaluasi &amp; Scoring (X1)
+                        </p>
+                        
+                        <div>
+                            <div class="flex justify-between text-[10px] mb-0.5">
+                                <span class="text-slate-500">Omzet Bulanan</span>
+                                <span id="val-omzet-label" class="text-slate-700 font-bold">Rp 0 Jt</span>
+                            </div>
+                            <input type="range" id="input-omzet" min="1000000" max="1000000000" step="5000000" class="w-full h-1 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-700" oninput="updateActiveMerchantData('omzet', this.value)">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <div class="flex justify-between text-[10px] mb-0.5">
+                                    <span class="text-slate-500">Pegawai</span>
+                                    <span id="val-employees-label" class="text-slate-700 font-bold">0 Org</span>
+                                </div>
+                                <input type="range" id="input-employees" min="1" max="100" class="w-full h-1 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-700" oninput="updateActiveMerchantData('employees', this.value)">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-[10px] mb-0.5">
+                                    <span class="text-slate-500">Volume Tx</span>
+                                    <span id="val-volume-label" class="text-slate-700 font-bold">0 Tx</span>
+                                </div>
+                                <input type="range" id="input-volume" min="1" max="100" class="w-full h-1 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-700" oninput="updateActiveMerchantData('dailyTxVolume', this.value)">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                            <button onclick="toggleActiveMerchantBoolean('hasPayroll')" id="btn-payroll" class="flex items-center justify-between p-1.5 rounded-lg border text-left transition-all">
+                                <span class="text-[9px] font-bold">Payroll Staff</span>
+                                <span class="indicator-dot w-2 h-2 rounded-full"></span>
+                            </button>
+                            <button onclick="toggleActiveMerchantBoolean('hasLending')" id="btn-lending" class="flex items-center justify-between p-1.5 rounded-lg border text-left transition-all">
+                                <span class="text-[9px] font-bold">Kredit KUR</span>
+                                <span class="indicator-dot w-2 h-2 rounded-full"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Playbook Taktis Lapangan RM (X4) -->
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 flex-grow">
+                    <div class="flex items-center gap-1.5 text-amber-600 border-b border-slate-100 pb-2 mb-3">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                        <h4 class="font-bold text-[10px] uppercase tracking-wider font-montserrat text-slate-700">Playbook Sales RM (X4)</h4>
+                    </div>
+
+                    <div class="space-y-3 text-xs">
+                        <div class="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
+                            <span class="text-[8px] text-blue-700 font-extrabold uppercase tracking-wider block">Panduan Aktivasi Utama</span>
+                            <h5 id="playbook-title" class="font-bold text-xs text-slate-800 mt-1 mb-1">Pilih Prospek</h5>
+                            <p id="playbook-action" class="text-[11px] text-slate-500 leading-relaxed">Panduan harian penjualan digital Anda akan langsung muncul di sini...</p>
+                        </div>
+
+                        <div class="bg-amber-50/50 p-3 rounded-xl border border-amber-100">
+                            <span class="text-[8px] text-amber-800 font-extrabold uppercase tracking-wider flex items-center gap-1">
+                                <i class="fa-solid fa-comment-dots text-amber-600"></i> Skrip Percakapan Sales RM
+                            </span>
+                            <p id="playbook-pitch" class="text-[11px] text-slate-700 italic leading-relaxed mt-1">"Selamat siang, saya Relationship Manager Bank Mandiri Graha Irama..."</p>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <span class="text-[8px] text-slate-400 font-bold uppercase tracking-wider block">Checklist Lapangan</span>
+                            <div class="space-y-1" id="playbook-checklist">
+                                <!-- Diisi secara dinamis oleh JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Alur Rantai Ekosistem Terpadu Mandiri -->
+        <div class="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-3 text-center lg:text-left">
+                Rantai Ekosistem Terpadu - Mandiri Graha Irama (TO-BE)
+            </p>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-center text-xs">
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col items-center">
+                    <span class="p-1.5 bg-rose-100 text-rose-600 rounded-lg mb-1.5"><i class="fa-solid fa-map-location-dot"></i></span>
+                    <span class="font-bold text-slate-700 text-[10px]">1. Pemetaan Geografis</span>
+                    <p class="text-[9px] text-slate-400 mt-0.5">Alamat Riil &amp; Jarak</p>
+                </div>
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col items-center">
+                    <span class="p-1.5 bg-indigo-100 text-indigo-600 rounded-lg mb-1.5"><i class="fa-solid fa-users"></i></span>
+                    <span class="font-bold text-slate-700 text-[10px]">2. Kunjungan Terarah</span>
+                    <p class="text-[9px] text-slate-400 mt-0.5">Sesuai prioritas jarak terdekat</p>
+                </div>
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col items-center">
+                    <span class="p-1.5 bg-amber-100 text-amber-600 rounded-lg mb-1.5"><i class="fa-solid fa-sliders"></i></span>
+                    <span class="font-bold text-slate-700 text-[10px]">3. Scoring X1</span>
+                    <p class="text-[9px] text-slate-400 mt-0.5">Potensi CASA &amp; volume QRIS</p>
+                </div>
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col items-center">
+                    <span class="p-1.5 bg-emerald-100 text-emerald-600 rounded-lg mb-1.5"><i class="fa-solid fa-qrcode"></i></span>
+                    <span class="font-bold text-slate-700 text-[10px]">4. Aktivasi QRIS</span>
+                    <p class="text-[9px] text-slate-400 mt-0.5">Unggah Foto &amp; Aktivasi</p>
+                </div>
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col items-center">
+                    <span class="p-1.5 bg-purple-100 text-purple-600 rounded-lg mb-1.5"><i class="fa-solid fa-chart-line"></i></span>
+                    <span class="font-bold text-slate-700 text-[10px]">5. Cross-Selling X3</span>
+                    <p class="text-[9px] text-slate-400 mt-0.5">Pemantauan kelayakan kredit</p>
+                </div>
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col items-center">
+                    <span class="p-1.5 bg-yellow-100 text-yellow-600 rounded-lg mb-1.5"><i class="fa-solid fa-award"></i></span>
+                    <span class="font-bold text-slate-700 text-[10px]">6. Loyalitas Ekosistem</span>
+                    <p class="text-[9px] text-slate-400 mt-0.5">Pertumbuhan CASA jangka panjang</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW STRATEGY CENTER (Interactive Presentation Slides) -->
+    <div id="view-strategy" class="hidden bg-white border border-slate-200 rounded-2xl p-6 shadow-md flex flex-col justify-between min-h-[600px] relative overflow-hidden">
+        
+        <!-- Kontainer Slide -->
+        <div class="flex-1 flex flex-col justify-center">
+            
+            <!-- Slide 1 -->
+            <div id="slide-1" class="slide-content space-y-6 max-w-4xl mx-auto py-8">
+                <div class="space-y-2">
+                    <span class="text-amber-600 uppercase tracking-widest text-xs font-extrabold font-montserrat">Executive Framework</span>
+                    <h2 class="text-3xl md:text-5xl font-black text-slate-900 leading-tight font-montserrat">Merchant Lending<br/>Acceleration Strategy</h2>
+                    <p class="text-slate-500 text-sm md:text-base max-w-2xl leading-relaxed">
+                        Membangun pipeline penyaluran kredit (lending) yang sehat dan berkelanjutan di wilayah Graha Irama melalui optimalisasi akuisisi merchant berbasis data geografis, alamat, serta volume transaksi, standardisasi proses penjualan, serta peningkatan kapabilitas Relationship Manager (RM) Dana.
+                    </p>
+                </div>
+                <div class="pt-6">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">6-Step Acceleration Chain</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-center">
+                            <span class="text-[10px] font-bold text-amber-600 block mb-1">Tahap 01</span>
+                            <span class="font-bold text-xs text-slate-800 block truncate">Merchant Acq.</span>
+                            <span class="text-[9px] text-slate-400 block mt-1">Zonasi Radius</span>
+                        </div>
+                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-center">
+                            <span class="text-[10px] font-bold text-amber-600 block mb-1">Tahap 02</span>
+                            <span class="font-bold text-xs text-slate-800 block truncate">Prioritization</span>
+                            <span class="text-[9px] text-slate-400 block mt-1">Scoring X1</span>
+                        </div>
+                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-center">
+                            <span class="text-[10px] font-bold text-amber-600 block mb-1">Tahap 03</span>
+                            <span class="font-bold text-xs text-slate-800 block truncate">Needs Assessment</span>
+                            <span class="text-[9px] text-slate-400 block mt-1">Celah modal</span>
+                        </div>
+                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-center">
+                            <span class="text-[10px] font-bold text-amber-600 block mb-1">Tahap 04</span>
+                            <span class="font-bold text-xs text-slate-800 block truncate">Funding Solution</span>
+                            <span class="text-[9px] text-slate-400 block mt-1">Giro &amp; Payroll</span>
+                        </div>
+                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-center">
+                            <span class="text-[10px] font-bold text-amber-600 block mb-1">Tahap 05</span>
+                            <span class="font-bold text-xs text-slate-800 block truncate">Lending Active</span>
+                            <span class="text-[9px] text-slate-400 block mt-1">KUR &amp; Kredit</span>
+                        </div>
+                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-center">
+                            <span class="text-[10px] font-bold text-amber-600 block mb-1">Tahap 06</span>
+                            <span class="font-bold text-xs text-slate-800 block truncate">Relation Growth</span>
+                            <span class="text-[9px] text-slate-400 block mt-1">Referral &amp; Retensi</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 2 -->
+            <div id="slide-2" class="slide-content hidden space-y-6 max-w-5xl mx-auto py-4">
+                <div class="border-b border-slate-100 pb-3">
+                    <span class="text-amber-600 uppercase tracking-wider text-xs font-extrabold font-montserrat">Strategic Initiative X1</span>
+                    <h2 class="text-2xl md:text-3xl font-black text-slate-900 font-montserrat mt-0.5">Merchant Prioritization Framework</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                    <div class="md:col-span-7 bg-slate-50 p-5 rounded-xl border border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase mb-3">Parameter Penilaian &amp; Pembobotan Scoring</h4>
+                        <table class="w-full text-xs text-left text-slate-500">
+                            <thead>
+                                <tr class="border-b border-slate-200 text-slate-400 font-bold">
+                                    <th class="pb-2">Parameter</th>
+                                    <th class="pb-2 text-right">Bobot %</th>
+                                    <th class="pb-2 pl-4">Indikator Keberhasilan</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr>
+                                    <td class="py-2.5 font-bold text-slate-700">Omzet Merchant</td>
+                                    <td class="py-2.5 text-right text-amber-600 font-bold">25%</td>
+                                    <td class="py-2.5 pl-4 text-[11px]">Sirkulasi kas bulanan terverifikasi</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 font-bold text-slate-700">Jumlah Pegawai</td>
+                                    <td class="py-2.5 text-right text-amber-600 font-bold">20%</td>
+                                    <td class="py-2.5 pl-4 text-[11px]">Indikator potensi program payroll staf</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 font-bold text-slate-700">Volume Transaksi</td>
+                                    <td class="py-2.5 text-right text-amber-600 font-bold">20%</td>
+                                    <td class="py-2.5 pl-4 text-[11px]">Frekuensi harian pemakaian kasir QRIS</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 font-bold text-slate-700">Potensi CASA</td>
+                                    <td class="py-2.5 text-right text-amber-600 font-bold">15%</td>
+                                    <td class="py-2.5 pl-4 text-[11px]">Kapasitas dana mengendap giro/tabungan</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 font-bold text-slate-700">Potensi Payroll &amp; Lending</td>
+                                    <td class="py-2.5 text-right text-amber-600 font-bold">20%</td>
+                                    <td class="py-2.5 pl-4 text-[11px]">Kebutuhan kredit modal usaha ekosistem</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="md:col-span-5 space-y-4">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <h5 class="text-[11px] font-bold text-slate-400 uppercase mb-2">Klasifikasi Prioritas</h5>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex items-center gap-2 text-emerald-600 font-bold"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> High Priority (Skor &gt; 75%)</div>
+                                <div class="flex items-center gap-2 text-amber-500 font-bold"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Medium Priority (Skor 50% - 75%)</div>
+                                <div class="flex items-center gap-2 text-slate-400 font-bold"><span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span> Low Priority (Skor &lt; 50%)</div>
+                            </div>
+                        </div>
+                        <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100 text-xs">
+                            <h5 class="font-bold text-emerald-800 mb-1">Dampak Bisnis Strategis</h5>
+                            <p class="text-slate-600 leading-relaxed">
+                                RM tidak lagi mendatangi merchant secara acak. Waktu produktif harian tim dialokasikan untuk memprioritaskan merchant di radius terdekat yang memiliki estimasi skor bisnis tertinggi.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 3 -->
+            <div id="slide-3" class="slide-content hidden space-y-6 max-w-5xl mx-auto py-4">
+                <div class="border-b border-slate-100 pb-3">
+                    <span class="text-amber-600 uppercase tracking-wider text-xs font-extrabold font-montserrat">Strategic Initiative X2</span>
+                    <h2 class="text-2xl md:text-3xl font-black text-slate-900 font-montserrat mt-0.5">Sales Pipeline Management SOP</h2>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-nowrap overflow-x-auto gap-2.5 py-4">
+                    <div class="flex-shrink-0 w-[110px] bg-white p-2 rounded-lg border border-slate-200 text-center"><span class="text-[9px] font-bold text-slate-400">Stage 01</span><span class="font-bold text-xs text-slate-700 block mt-1">Prospect</span></div>
+                    <div class="flex-shrink-0 w-[110px] bg-white p-2 rounded-lg border border-slate-200 text-center"><span class="text-[9px] font-bold text-slate-400">Stage 02</span><span class="font-bold text-xs text-slate-700 block mt-1">Visited</span></div>
+                    <div class="flex-shrink-0 w-[110px] bg-white p-2 rounded-lg border border-slate-200 text-center"><span class="text-[9px] font-bold text-slate-400">Stage 03</span><span class="font-bold text-xs text-slate-700 block mt-1">Interested</span></div>
+                    <div class="flex-shrink-0 w-[110px] bg-white p-2 rounded-lg border border-slate-200 text-center"><span class="text-[9px] font-bold text-slate-400">Stage 04</span><span class="font-bold text-xs text-slate-700 block mt-1">Pipeline</span></div>
+                    <div class="flex-shrink-0 w-[110px] bg-white p-2 rounded-lg border border-slate-200 text-center"><span class="text-[9px] font-bold text-slate-400">Stage 05</span><span class="font-bold text-xs text-slate-700 block mt-1">Follow Up</span></div>
+                    <div class="flex-shrink-0 w-[110px] bg-white p-2 rounded-lg border border-slate-200 text-center"><span class="text-[9px] font-bold text-slate-400">Stage 06</span><span class="font-bold text-xs text-slate-700 block mt-1">Activated</span></div>
+                    <div class="flex-shrink-0 w-[110px] bg-white p-2 rounded-lg border border-slate-200 text-center"><span class="text-[9px] font-bold text-slate-400">Stage 07</span><span class="font-bold text-xs text-slate-700 block mt-1">Active Merch.</span></div>
+                    <div class="flex-shrink-0 w-[110px] bg-white p-2 rounded-lg border border-slate-200 text-center"><span class="text-[9px] font-bold text-slate-400">Stage 08</span><span class="font-bold text-xs text-slate-700 block mt-1">Cross Sell</span></div>
+                    <div class="flex-shrink-0 w-[110px] bg-white p-2 rounded-lg border border-slate-200 text-center"><span class="text-[9px] font-bold text-slate-400">Stage 09</span><span class="font-bold text-xs text-slate-700 block mt-1">Loyal Merch.</span></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                        <h4 class="font-bold text-slate-700 uppercase border-b border-slate-200 pb-2">Standar Tata Kelola SLA &amp; PIC</h4>
+                        <div class="space-y-2 text-slate-600">
+                            <p><strong>🕒 Batas SLA Ketat:</strong> Transisi antartahap maksimal 3 hari kerja pada fase krusial pengumpulan berkas dan persetujuan penawaran kredit merchant.</p>
+                            <p><strong>👤 Kepemilikan (PIC) Eksklusif:</strong> Setiap prospek memiliki RM penanggung jawab khusus guna menghindari adanya penawaran berganda dari unit kerja berbeda.</p>
+                            <p><strong>📊 Weekly Pipeline Review:</strong> Evaluasi berkala setiap akhir pekan bersama Area Head untuk memecah kendala lapangan.</p>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                        <h4 class="font-bold text-slate-700 uppercase border-b border-slate-200 pb-2">Metrik Kinerja Utama (KPI)</h4>
+                        <div class="grid grid-cols-2 gap-3 text-center font-semibold">
+                            <div class="p-3 bg-white rounded-lg border border-slate-200"><span class="text-xl font-black text-blue-700 block">Conversion %</span><span class="text-[9px] text-slate-400 uppercase">Rasio Sukses Tahap</span></div>
+                            <div class="p-3 bg-white rounded-lg border border-slate-200"><span class="text-xl font-black text-blue-700 block">Lead Aging</span><span class="text-[9px] text-slate-400 uppercase">Durasi Mandek Fase</span></div>
+                            <div class="p-3 bg-white rounded-lg border border-slate-200"><span class="text-xl font-black text-blue-700 block">Win Rate %</span><span class="text-[9px] text-slate-400 uppercase">Rasio Closing Pipa</span></div>
+                            <div class="p-3 bg-white rounded-lg border border-slate-200"><span class="text-xl font-black text-blue-700 block">Pipeline Rp</span><span class="text-[9px] text-slate-400 uppercase">Estimasi Nilai Kredit</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 4 -->
+            <div id="slide-4" class="slide-content hidden space-y-6 max-w-5xl mx-auto py-4">
+                <div class="border-b border-slate-100 pb-3">
+                    <span class="text-amber-600 uppercase tracking-wider text-xs font-extrabold font-montserrat">Strategic Initiative X3</span>
+                    <h2 class="text-2xl md:text-3xl font-black text-slate-900 font-montserrat mt-0.5">Integrated Merchant Intelligence Dashboard</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                    <div class="md:col-span-4 bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2 text-xs">
+                        <h4 class="font-bold text-slate-700 uppercase mb-2">Konsolidasi Data Terintegrasi</h4>
+                        <div class="p-2 bg-white border border-slate-200 rounded-lg text-slate-700 flex items-center gap-2"><i class="fa-solid fa-mobile-screen text-blue-600"></i> Livin' Merchant App Data</div>
+                        <div class="p-2 bg-white border border-slate-200 rounded-lg text-slate-700 flex items-center gap-2"><i class="fa-solid fa-qrcode text-emerald-600"></i> Transaksi Kasir QRIS Mandiri</div>
+                        <div class="p-2 bg-white border border-slate-200 rounded-lg text-slate-700 flex items-center gap-2"><i class="fa-solid fa-address-book text-amber-500"></i> Profil CRM &amp; GPS Location</div>
+                    </div>
+                    <div class="md:col-span-4 text-center py-4">
+                        <div class="inline-block bg-blue-700 text-white font-bold px-4 py-3 rounded-xl shadow-md">
+                            <i class="fa-solid fa-arrows-spin fa-spin text-lg mb-1 block"></i>
+                            <span class="text-[10px] uppercase tracking-wider">Address Mapping Engine</span>
+                        </div>
+                        <div class="text-slate-400 text-[10px] mt-2">Sinkronisasi data alamat &amp; jarak lokasi</div>
+                    </div>
+                    <div class="md:col-span-4 bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2 text-xs">
+                        <h4 class="font-bold text-slate-700 uppercase mb-2">Manfaat Integrasi Dasbor</h4>
+                        <p class="text-slate-600 leading-relaxed">
+                            <strong>Single Source of Truth:</strong> Menghilangkan duplikasi data penawaran. Seluruh departemen memiliki visi penawaran dan status pipeline yang sama.
+                        </p>
+                        <p class="text-slate-600 leading-relaxed">
+                            <strong>Automatic Alerts:</strong> Sistem otomatis merekomendasikan penawaran produk pinjaman modal kerja (*cross-sell*) ketika volume kasir merchant melewati batas kelayakan minimum.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 5 -->
+            <div id="slide-5" class="slide-content hidden space-y-6 max-w-5xl mx-auto py-4">
+                <div class="border-b border-slate-100 pb-3">
+                    <span class="text-amber-600 uppercase tracking-wider text-xs font-extrabold font-montserrat">Strategic Initiative X4</span>
+                    <h2 class="text-2xl md:text-3xl font-black text-slate-900 font-montserrat mt-0.5">RM Capability Enhancement Program</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-100 space-y-4">
+                        <h4 class="font-bold text-slate-700 text-xs uppercase border-b border-slate-200 pb-2">Kurikulum Pelatihan Terstruktur</h4>
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div class="p-2.5 bg-white border border-slate-200 rounded-lg">
+                                <span class="font-bold text-amber-600 block mb-0.5">01. Analisis Kas</span>
+                                <span class="text-slate-400 text-[10px]">Membaca mutasi rekening koran dan kesehatan perputaran kas</span>
+                            </div>
+                            <div class="p-2.5 bg-white border border-slate-200 rounded-lg">
+                                <span class="font-bold text-amber-600 block mb-0.5">02. Needs Assess.</span>
+                                <span class="text-slate-400 text-[10px]">Menakar celah modal kerja dan plafon pembiayaan</span>
+                            </div>
+                            <div class="p-2.5 bg-white border border-slate-200 rounded-lg">
+                                <span class="font-bold text-amber-600 block mb-0.5">03. Ecosystem Sell</span>
+                                <span class="text-slate-400 text-[10px]">Bundling lengkap QRIS + Payroll + Giro bisnis dalam 1 kali visit</span>
+                            </div>
+                            <div class="p-2.5 bg-white border border-slate-200 rounded-lg">
+                                <span class="font-bold text-amber-600 block mb-0.5">04. Negosiasi</span>
+                                <span class="text-slate-400 text-[10px]">Edukasi MDR, suku bunga kredit, serta penanganan kendala</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-100 flex flex-col justify-between h-full min-h-[220px]">
+                        <div>
+                            <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700 mb-3">
+                                <i class="fa-solid fa-user-tie text-lg"></i>
+                            </div>
+                            <h4 class="font-bold text-slate-800 text-sm font-montserrat">Transformasi Menjadi Trusted Business Advisor</h4>
+                            <p class="text-xs text-slate-500 mt-2 leading-relaxed">
+                                Meningkatkan level keahlian tim RM Dana tidak hanya sekadar menempelkan stiker kasir QRIS atau mendistribusikan mesin EDC, tetapi mampu memformulasikan kebutuhan pendanaan komprehensif bagi pemilik merchant.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 6 -->
+            <div id="slide-6" class="slide-content hidden space-y-6 max-w-5xl mx-auto py-4">
+                <div class="border-b border-slate-100 pb-3">
+                    <span class="text-amber-600 uppercase tracking-wider text-xs font-extrabold font-montserrat">Eksekusi &amp; Target</span>
+                    <h2 class="text-2xl md:text-3xl font-black text-slate-900 font-montserrat mt-0.5">Roadmap Implementasi &amp; Business Impact</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
+                    <div class="md:col-span-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-700 uppercase mb-3">Timeline Kegiatan Tahunan</h4>
+                        <div class="space-y-2 text-xs">
+                            <div class="flex gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                <span class="font-bold text-blue-700 font-mono w-14">Bulan 01</span>
+                                <span class="text-slate-600">Pembersihan database merchant lama &amp; peluncuran modul scoring otomatis (X1).</span>
+                            </div>
+                            <div class="flex gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                <span class="font-bold text-blue-700 font-mono w-14">Bulan 02</span>
+                                <span class="text-slate-600">Pembuatan regulasi SOP Pipeline (X2) &amp; aktivasi visual tracking peta real-time (X3).</span>
+                            </div>
+                            <div class="flex gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                <span class="font-bold text-blue-700 font-mono w-14">Bulan 03</span>
+                                <span class="text-slate-600">Pilot project pendampingan lapangan tim RM Cabang Graha Irama (X4).</span>
+                            </div>
+                            <div class="flex gap-3 p-2 bg-white rounded-lg border border-slate-200">
+                                <span class="font-bold text-blue-700 font-mono w-14">Bulan 04</span>
+                                <span class="text-slate-600">Penerapan penuh sistem manajemen berbasis jarak lokasi di seluruh kantor cabang pembantu.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="md:col-span-6 bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                        <h4 class="text-xs font-bold text-slate-700 uppercase mb-3">Sasaran Utama Pertumbuhan Finansial</h4>
+                        <div class="grid grid-cols-2 gap-3 font-semibold">
+                            <div class="p-3 bg-white rounded-xl border border-slate-200 text-center shadow-sm">
+                                <span class="text-[9px] text-slate-400 uppercase block">Merchant Coverage</span>
+                                <div class="flex justify-center items-baseline gap-2 mt-1">
+                                    <span class="text-xs text-slate-400 line-through">40%</span>
+                                    <span class="text-lg font-extrabold text-emerald-600 font-montserrat">90%</span>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-white rounded-xl border border-slate-200 text-center shadow-sm">
+                                <span class="text-[9px] text-slate-400 uppercase block">Conversion Rate</span>
+                                <div class="flex justify-center items-baseline gap-2 mt-1">
+                                    <span class="text-xs text-slate-400 line-through">20%</span>
+                                    <span class="text-lg font-extrabold text-emerald-600 font-montserrat">45%</span>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-white rounded-xl border border-slate-200 text-center shadow-sm">
+                                <span class="text-[9px] text-slate-400 uppercase block">Cross Selling Ratio</span>
+                                <div class="flex justify-center items-baseline gap-2 mt-1">
+                                    <span class="text-xs text-slate-400 line-through">1 Prod</span>
+                                    <span class="text-lg font-extrabold text-emerald-600 font-montserrat">3 Prod</span>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-white rounded-xl border border-slate-200 text-center shadow-sm">
+                                <span class="text-[9px] text-slate-400 uppercase block">Lending Pipeline</span>
+                                <div class="flex justify-center items-baseline gap-2 mt-1">
+                                    <span class="text-xs text-slate-400 line-through">Base</span>
+                                    <span class="text-lg font-extrabold text-emerald-600 font-montserrat">+30%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-around pt-3 border-t border-slate-200 text-[10px] text-slate-400 text-center font-bold">
+                            <div>🚀 CASA Growth ↑</div>
+                            <div>💳 Payroll Acquisition ↑</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Slide Navigation Controls -->
+        <div class="border-t border-slate-200 pt-4 mt-6 flex justify-between items-center bg-slate-50 p-3 rounded-xl">
+            <div class="text-xs text-slate-500 font-bold">
+                Slide <strong id="slide-number" class="text-slate-800 font-montserrat">1 / 6</strong>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="changeSlide(-1)" id="btn-prev-slide" class="text-xs bg-white hover:bg-slate-100 disabled:opacity-30 text-slate-700 font-bold py-1.5 px-3 rounded-lg border border-slate-300 transition shadow-sm">
+                    Sebelumnya
+                </button>
+                <button onclick="changeSlide(1)" id="btn-next-slide" class="text-xs bg-blue-700 hover:bg-blue-800 disabled:opacity-30 text-white font-bold py-1.5 px-3 rounded-lg transition shadow-sm">
+                    Selanjutnya
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- HAK CIPTA FOOTER -->
+    <footer class="mt-6 text-center text-slate-400 text-[11px] font-semibold border-t border-slate-200 pt-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+        <span>© 2026 Bank Mandiri (Persero) Tbk. Cabang Graha Irama. Seluruh hak cipta dilindungi.</span>
+        <span class="flex items-center gap-1.5 text-blue-700">
+            <span class="w-2 h-2 rounded-full bg-blue-700 animate-pulse"></span> 
+            Radar Address &amp; Photo Attach Suite (Pure White Theme)
+        </span>
+    </footer>
+
+    <!-- FIREBASE MODULES INTEGRATION -->
+    <script type="module">
+        // Global State Variables
+        window.prospects = [];
+        window.currentSelectedId = null;
+        window.currentSlide = 1;
+
+        const defaultDatabaseUrl = 'https://senator-merchant-default-rtdb.firebaseio.com/';
+        const databaseUrl = typeof __firebase_database_url !== 'undefined' && __firebase_database_url
+            ? __firebase_database_url
+            : defaultDatabaseUrl;
+        const normalizedDatabaseUrl = databaseUrl.replace(/\/$/, '');
+
+        let syncTimer = null;
+
+        function setSyncStatus(message, className) {
+            const statusEl = document.getElementById("sync-status");
+            if (!statusEl) return;
+            statusEl.innerHTML = message;
+            statusEl.className = className;
+        }
+
+        async function loadProspectsFromCloud() {
+            try {
+                const response = await fetch(`${normalizedDatabaseUrl}/prospects.json`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                const loadedProspects = [];
+                if (data) {
+                    Object.entries(data).forEach(([key, value]) => {
+                        loadedProspects.push({ id: key, ...value });
+                    });
+                }
+
+                window.prospects = loadedProspects.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                updateDashboard();
+                return true;
+            } catch (err) {
+                console.error("Realtime Database load failed:", err);
+                return false;
+            }
+        }
+
+        async function initSync() {
+            setSyncStatus(
+                `<span class="w-1.5 h-1.5 bg-amber-500 rounded-full animate-ping"></span> Connecting to Firebase...`,
+                "bg-amber-50 text-amber-700 text-[10px] px-2.5 py-0.5 rounded-full font-semibold border border-amber-200 flex items-center gap-1"
+            );
+
+            const loaded = await loadProspectsFromCloud();
+            if (loaded) {
+                setSyncStatus(
+                    `<span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Cloud Live Sync Active`,
+                    "bg-emerald-50 text-emerald-700 text-[10px] px-2.5 py-0.5 rounded-full font-semibold border border-emerald-200 flex items-center gap-1"
+                );
+            } else {
+                setSyncStatus(
+                    `<span class="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> Sync Error`,
+                    "bg-rose-50 text-rose-700 text-[10px] px-2.5 py-0.5 rounded-full font-semibold border border-rose-200 flex items-center gap-1"
+                );
+            }
+
+            if (syncTimer) {
+                clearInterval(syncTimer);
+            }
+            syncTimer = setInterval(() => {
+                loadProspectsFromCloud();
+            }, 5000);
+        }
+
+        window.saveProspectToCloud = async function(prospectObj) {
+            try {
+                const prospectId = String(prospectObj.id);
+                const response = await fetch(`${normalizedDatabaseUrl}/prospects/${encodeURIComponent(prospectId)}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(prospectObj)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const idx = window.prospects.findIndex(p => String(p.id) === prospectId);
+                if (idx > -1) {
+                    window.prospects[idx] = prospectObj;
+                } else {
+                    window.prospects.push(prospectObj);
+                }
+                window.prospects = window.prospects.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                updateDashboard();
+            } catch (err) {
+                console.error("Cloud Save failed:", err);
+            }
+        };
+
+        window.deleteProspectFromCloud = async function(id) {
+            try {
+                const response = await fetch(`${normalizedDatabaseUrl}/prospects/${encodeURIComponent(String(id))}.json`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                window.prospects = window.prospects.filter(p => String(p.id) !== String(id));
+                updateDashboard();
+            } catch (err) {
+                console.error("Cloud delete failed:", err);
+            }
+        };
+
+        window.addEventListener('load', () => {
+            initSync();
+            resizeMap();
+        });
+    </script>
+
+    <!-- APP BUSINESS LOGIC (Vanilla Javascript) -->
+    <script>
+        const GRAHA_IRAMA_LAT = -6.233112;
+        const GRAHA_IRAMA_LON = 106.831939;
+
+        // Pipeline Stages List (1 to 9 matching the images)
+        const PIPELINE_STAGES = [
+            { id: 1, name: "Prospect", desc: "Merchant potensial terdaftar", color: "bg-rose-500", text: "text-rose-600", border: "border-rose-300", icon: "fa-search" },
+            { id: 2, name: "Visited", desc: "Kunjungan lapangan perdana oleh RM", color: "bg-indigo-500", text: "text-indigo-600", border: "border-indigo-300", icon: "fa-eye" },
+            { id: 3, name: "Interested", desc: "Ketertarikan pendaftaran QRIS", color: "bg-amber-500", text: "text-amber-600", border: "border-amber-300", icon: "fa-thumbs-up" },
+            { id: 4, name: "Pipeline", desc: "Sedang diproses dalam antrean back office", color: "bg-sky-500", text: "text-sky-600", border: "border-sky-300", icon: "fa-hourglass-half" },
+            { id: 5, name: "Need Follow Up", desc: "Memerlukan kunjungan konfirmasi berkas", color: "bg-orange-500", text: "text-orange-600", border: "border-orange-300", icon: "fa-clock" },
+            { id: 6, name: "Activated", desc: "Aplikasi Livin' Merchant & QRIS aktif", color: "bg-emerald-500", text: "text-emerald-600", border: "border-emerald-300", icon: "fa-check-circle" },
+            { id: 7, name: "Active Merchant", desc: "Mulai aktif bertransaksi secara rutin", color: "bg-teal-500", text: "text-teal-600", border: "border-teal-300", icon: "fa-shopping-cart" },
+            { id: 8, name: "Cross Selling", desc: "Identifikasi penawaran pinjaman modal kerja (KUR)", color: "bg-purple-500", text: "text-purple-600", border: "border-purple-300", icon: "fa-arrow-trend-up" },
+            { id: 9, name: "Loyal Merchant", desc: "Kontributor volume dana pengendap tertinggi", color: "bg-yellow-500", text: "text-yellow-600", border: "border-yellow-300", icon: "fa-trophy" }
+        ];
+
+        // Educational guidelines per pipeline stage
+        const EDUCATIONAL_PLAYBOOK = {
+            1: {
+                title: "Inisiasi & Analisis Bisnis (Prospecting)",
+                action: "Amati profil merchant saat berkunjung. Catat nama penanggung jawab utama bisnis.",
+                pitch: "Selamat siang Bapak/Ibu, saya RM dari Bank Mandiri Graha Irama. Kami melihat sirkulasi bisnis Bapak/Ibu sangat potensial dan ingin mendiskusikan peluang efisiensi kas Anda.",
+                checklist: ["Mencatat profil visual toko", "Memperkirakan kesesuaian segmen", "Mengonfirmasi nama penanggung jawab utama"]
+            },
+            2: {
+                title: "Pertemuan Pertama & Demo Produk (Visited)",
+                action: "Tunjukkan antarmuka aplikasi Livin' Merchant di handphone Anda. Tunjukkan keunggulan pencairan instan.",
+                pitch: "Dengan Livin' Merchant, Bapak/Ibu bisa memantau transaksi dari mana saja secara real-time dan menikmati pencairan dana instan tanpa menunggu rekap harian manual.",
+                checklist: ["Demo aplikasi Livin' Merchant", "Penjelasan transparansi laporan", "Penjelasan zero-risk uang palsu"]
+            },
+            3: {
+                title: "Pengumpulan Berkas & Solusi Bisnis (Interested)",
+                action: "Bantu pengisian form pendaftaran digital secara langsung demi menjaga antusiasme merchant.",
+                pitch: "Proses registrasi QRIS kami sangat cepat dan aman. Mari saya pandu melengkapi data KTP dan NPWP langsung lewat HP sekarang agar besok dapat langsung beroperasi.",
+                checklist: ["Scan KTP & NPWP", "Mengisi formulir pendaftaran digital", "Persetujuan skema komisi MDR dasar"]
+            },
+            4: {
+                title: "Pemantauan SLA Aktivasi (Pipeline)",
+                action: "Pantau status pengajuan di sistem SENATOR Anda agar tidak terjadi delay persetujuan dari Back Office.",
+                pitch: "Aplikasi merchant Bapak/Ibu sedang diverifikasi oleh tim internal kami. Saya pribadi memantau progresnya agar QRIS dapat segera terbit dalam 1-2 hari kerja.",
+                checklist: ["Memeriksa status kelengkapan data", "Menghubungi tim Back Office jika ada delay", "Mengonfirmasi alamat pengiriman kit kasir"]
+            },
+            5: {
+                title: "Mengatasi Keraguan (Need Follow Up)",
+                action: "Fokus pada edukasi efisiensi biaya operasional jangka panjang dan keamanan transaksi cashless.",
+                pitch: "Kami memahami kekhawatiran Bapak/Ibu mengenai biaya MDR. Namun, biaya kecil ini mengeliminasi risiko selisih kasir, biaya transportasi setor tunai, serta mengundang pengguna setia Livin' Mandiri.",
+                checklist: ["Menjelaskan perbandingan biaya cash vs cashless", "Memberikan simulasi proteksi keamanan", "Mengatur jadwal kunjungan ulang pimpinan"]
+            },
+            6: {
+                title: "Pemasangan Atribut & Training Kasir (Activated)",
+                action: "Kunjungi kembali merchant. Pasang stiker QRIS di meja kasir yang paling strategis.",
+                pitch: "Selamat! QRIS Mandiri Anda sudah resmi aktif. Mari kita lakukan simulasi transaksi perdana sebesar Rp 10.000 untuk melatih staf kasir Anda.",
+                checklist: ["Menempel QRIS di kasir utama", "Melatih staf kasir memeriksa notifikasi", "Melakukan transaksi uji coba pertama"]
+            },
+            7: {
+                title: "Dorong Aktivitas & Volume Transaksi (Active Merchant)",
+                action: "Sarankan program promosi kecil atau penyediaan spanduk promosi eksklusif bagi pengguna Mandiri.",
+                pitch: "Agar transaksi QRIS makin ramai, kami menyediakan media promosi 'Bayar Pakai Livin' Mandiri' untuk menggaet ribuan karyawan di gedung Graha Irama ini.",
+                checklist: ["Memasang spanduk/banner promo Mandiri", "Mengedukasi program poin loyalitas kasir", "Evaluasi volume transaksi minggu pertama"]
+            },
+            8: {
+                title: "Cross-Selling Produk Bernilai Tinggi (Cross Selling)",
+                action: "Analisis sirkulasi dana di dashboard. Tawarkan modal kerja tambahan (KUR), payroll karyawan, atau Giro bisnis.",
+                pitch: "Melihat sirkulasi transaksi QRIS Mandiri Anda yang sangat sehat selama 3 bulan ini, kami menawarkan fasilitas Kredit Usaha Rakyat (KUR) bunga sangat ringan untuk ekspansi cabang baru.",
+                checklist: ["Analisis potensi sirkulasi CASA bulanan", "Menawarkan payroll Mandiri untuk staf", "Penyusunan proposal penawaran KUR"]
+            },
+            9: {
+                title: "Menjaga Kemitraan Strategis (Loyal Merchant)",
+                action: "Jadikan merchant ini sebagai 'Ambassador' Mandiri untuk mempromosikan ekosistem bank kepada tenant lain.",
+                pitch: "Terima kasih atas loyalitas luar biasa Bapak/Ibu dalam ekosistem Mandiri Graha Irama. Sebagai mitra utama, Anda berhak mendapatkan undangan prioritas Merchant Gathering tahunan kami.",
+                checklist: ["Memberikan piagam apresiasi merchant VIP", "Mengajukan merchant ke program nasional", "Meminta referensi prospek tenant baru"]
+            }
+        };
+
+        // Canvas Setup
+        let canvas = document.getElementById("radarMap");
+        let tempPhotoBase64 = "";
+        let pickerMap = null;
+        let pickerMarker = null;
+        let selectedLocation = null;
+        let radarMap = null;
+        let radarMarkers = [];
+        let radarCircles = [];
+
+        function setSelectedLocation(lat, lon, addressText) {
+            selectedLocation = { lat, lon, addressText };
+            document.getElementById('selected-lat-display').innerText = lat.toFixed(6);
+            document.getElementById('selected-lon-display').innerText = lon.toFixed(6);
+            if (addressText) {
+                document.getElementById('new-address').value = addressText;
+            }
+        }
+
+        function initAddressPicker() {
+            const mapContainer = document.getElementById('address-picker-map');
+            if (!mapContainer || typeof L === 'undefined') return;
+
+            if (pickerMap) {
+                pickerMap.invalidateSize();
+                return;
+            }
+
+            pickerMap = L.map('address-picker-map', { zoomControl: true }).setView([GRAHA_IRAMA_LAT, GRAHA_IRAMA_LON], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(pickerMap);
+
+            pickerMarker = L.marker([GRAHA_IRAMA_LAT, GRAHA_IRAMA_LON], { draggable: true }).addTo(pickerMap);
+            pickerMarker.on('dragend', async function() {
+                const latlng = pickerMarker.getLatLng();
+                const addressText = await reverseGeocode(latlng.lat, latlng.lng);
+                setSelectedLocation(latlng.lat, latlng.lng, addressText);
+            });
+
+            pickerMap.on('click', async function(e) {
+                const latlng = e.latlng;
+                pickerMarker.setLatLng(latlng);
+                const addressText = await reverseGeocode(latlng.lat, latlng.lng);
+                setSelectedLocation(latlng.lat, latlng.lng, addressText);
+            });
+
+            setTimeout(() => {
+                if (pickerMap) {
+                    pickerMap.invalidateSize();
+                }
+            }, 200);
+        }
+
+        async function reverseGeocode(lat, lon) {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=id`);
+                if (!response.ok) throw new Error('Reverse geocode failed');
+                const data = await response.json();
+                return data.display_name || `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+            } catch (err) {
+                console.warn('Reverse geocode failed:', err);
+                return `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+            }
+        }
+
+        window.searchAddress = async function() {
+            const query = document.getElementById('address-search').value.trim();
+            if (!query) {
+                alert('Masukkan alamat atau nama tempat terlebih dahulu.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=id&q=${encodeURIComponent(query)}`);
+                if (!response.ok) throw new Error('Search failed');
+                const results = await response.json();
+                if (!results.length) {
+                    alert('Alamat tidak ditemukan. Coba kata kunci lain.');
+                    return;
+                }
+
+                const result = results[0];
+                const lat = parseFloat(result.lat);
+                const lon = parseFloat(result.lon);
+                pickerMap.setView([lat, lon], 15);
+                pickerMarker.setLatLng([lat, lon]);
+                setSelectedLocation(lat, lon, result.display_name);
+            } catch (err) {
+                console.error('Address search failed:', err);
+                alert('Tidak bisa mencari alamat saat ini.');
+            }
+        };
+
+        async function getCoordinateFromAddress(addressString) {
+            const cleaned = (addressString || '').trim();
+            if (selectedLocation) {
+                return {
+                    lat: selectedLocation.lat,
+                    lon: selectedLocation.lon,
+                    label: selectedLocation.addressText || cleaned
+                };
+            }
+
+            if (!cleaned) {
+                return {
+                    lat: GRAHA_IRAMA_LAT,
+                    lon: GRAHA_IRAMA_LON,
+                    label: 'Graha Irama'
+                };
+            }
+
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=id&q=${encodeURIComponent(cleaned)}`);
+                if (!response.ok) throw new Error('Geocode failed');
+                const results = await response.json();
+                if (results && results.length) {
+                    const result = results[0];
+                    return {
+                        lat: parseFloat(result.lat),
+                        lon: parseFloat(result.lon),
+                        label: result.display_name
+                    };
+                }
+            } catch (err) {
+                console.warn('Geocoding failed, using fallback coordinate:', err);
+            }
+
+            const hash = cleaned.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+            const latOffset = ((Math.abs(hash) % 1000) / 100000) - 0.005;
+            const lonOffset = (((Math.abs(hash) >> 5) % 1000) / 100000) - 0.005;
+            return {
+                lat: GRAHA_IRAMA_LAT + latOffset,
+                lon: GRAHA_IRAMA_LON + lonOffset,
+                label: cleaned
+            };
+        }
+
+        // Handle Photo uploading and downscaling (to prevent Firebase document size limit)
+        document.getElementById('new-photo').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        // Compress to max width of 250px
+                        const maxW = 250;
+                        const scale = maxW / img.width;
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = maxW;
+                        tempCanvas.height = img.height * scale;
+                        const tempCtx = tempCanvas.getContext('2d');
+                        tempCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
+                        tempPhotoBase64 = tempCanvas.toDataURL('image/jpeg', 0.7);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Haversine formula to compute distance in meters
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000; // Earth's radius in meters
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function calculatePriorityScore(merchant) {
+            let omzetScore = 0;
+            if (merchant.omzet >= 500000000) omzetScore = 100;
+            else if (merchant.omzet >= 150000000) omzetScore = 75;
+            else if (merchant.omzet >= 50000000) omzetScore = 50;
+            else omzetScore = 25;
+
+            let employeeScore = 0;
+            if (merchant.employees >= 30) employeeScore = 100;
+            else if (merchant.employees >= 10) employeeScore = 75;
+            else if (merchant.employees >= 3) employeeScore = 50;
+            else employeeScore = 25;
+
+            let volumeScore = 0;
+            if (merchant.dailyTxVolume >= 50) volumeScore = 100;
+            else if (merchant.dailyTxVolume >= 20) volumeScore = 75;
+            else if (merchant.dailyTxVolume >= 5) volumeScore = 50;
+            else volumeScore = 25;
+
+            let payrollScore = merchant.hasPayroll ? 100 : 0;
+            let lendingScore = merchant.hasLending ? 100 : 0;
+            let casaScore = merchant.casaPotential >= 50000000 ? 100 : merchant.casaPotential >= 10000000 ? 75 : 30;
+
+            const finalScore = (omzetScore * 0.25) + (employeeScore * 0.20) + (volumeScore * 0.20) + (casaScore * 0.15) + (payrollScore * 0.10) + (lendingScore * 0.10);
+            return Math.round(finalScore);
+        }
+
+        function getPriorityLabel(score) {
+            if (score >= 75) return { name: "High Priority", color: "text-emerald-600 bg-emerald-50 border border-emerald-200" };
+            if (score >= 50) return { name: "Medium Priority", color: "text-amber-600 bg-amber-50 border border-amber-200" };
+            return { name: "Low Priority", color: "text-slate-500 bg-slate-100 border border-slate-200" };
+        }
+
+        function switchView(mode) {
+            const btnOp = document.getElementById('btn-mode-operational');
+            const btnStr = document.getElementById('btn-mode-strategy');
+            const viewOp = document.getElementById('view-operational');
+            const viewStr = document.getElementById('view-strategy');
+
+            if (mode === 'operational') {
+                btnOp.className = "flex-1 lg:flex-none flex items-center justify-center gap-2 text-xs font-bold py-2 px-4 rounded-lg transition-all bg-blue-700 text-white shadow-sm";
+                btnStr.className = "flex-1 lg:flex-none flex items-center justify-center gap-2 text-xs font-bold py-2 px-4 rounded-lg transition-all text-slate-600 hover:text-slate-900";
+                viewOp.classList.remove('hidden');
+                viewStr.classList.add('hidden');
+                updateDashboard();
+            } else {
+                btnStr.className = "flex-1 lg:flex-none flex items-center justify-center gap-2 text-xs font-bold py-2 px-4 rounded-lg transition-all bg-blue-700 text-white shadow-sm";
+                btnOp.className = "flex-1 lg:flex-none flex items-center justify-center gap-2 text-xs font-bold py-2 px-4 rounded-lg transition-all text-slate-600 hover:text-slate-900";
+                viewStr.classList.remove('hidden');
+                viewOp.classList.add('hidden');
+                renderSlide();
+            }
+        }
+
+        function toggleAddForm() {
+            const form = document.getElementById('add-prospect-form');
+            const isHidden = form.classList.toggle('hidden');
+            if (!isHidden) {
+                setTimeout(() => {
+                    initAddressPicker();
+                    if (pickerMap) {
+                        pickerMap.invalidateSize();
+                    }
+                }, 150);
+            }
+        }
+
+        async function submitProspect() {
+            const name = document.getElementById('new-name').value;
+            const type = document.getElementById('new-type').value;
+            const floor = document.getElementById('new-floor').value || "Area Kuningan";
+            const room = document.getElementById('new-room').value || "Ruko";
+            const omzet = parseInt(document.getElementById('new-omzet').value) || 10000000;
+            const address = document.getElementById('new-address').value;
+
+            if (!name) {
+                alert("Harap masukkan nama bisnis!");
+                return;
+            }
+            if (!address) {
+                alert("Harap isi alamat lengkap merchant!");
+                return;
+            }
+
+            const btnSave = document.getElementById('btn-save-prospect');
+            btnSave.disabled = true;
+            btnSave.innerText = "Menyimpan...";
+
+            const coords = await getCoordinateFromAddress(address);
+            const calculatedDist = calculateDistance(GRAHA_IRAMA_LAT, GRAHA_IRAMA_LON, coords.lat, coords.lon);
+
+            const prospectId = `prospect_${Date.now()}`;
+            const newProspect = {
+                id: prospectId,
+                createdAt: Date.now(),
+                name: name,
+                type: type,
+                stage: 1, 
+                floor: floor,
+                room: room,
+                omzet: omzet,
+                employees: 5,
+                dailyTxVolume: 15,
+                casaPotential: Math.round(omzet * 0.15),
+                hasPayroll: false,
+                hasLending: false,
+                address: address,
+                addressLabel: coords.label || address,
+                location: {
+                    lat: coords.lat,
+                    lon: coords.lon,
+                    label: coords.label || address
+                },
+                photo: tempPhotoBase64, 
+                lat: coords.lat,
+                lon: coords.lon,
+                distance: calculatedDist
+            };
+
+            window.currentSelectedId = newProspect.id;
+            
+            // Call Cloud Save
+            if (window.saveProspectToCloud) {
+                await window.saveProspectToCloud(newProspect);
+            }
+
+            // Hide and Reset
+            document.getElementById('add-prospect-form').classList.add('hidden');
+            document.getElementById('new-name').value = '';
+            document.getElementById('new-omzet').value = '';
+            document.getElementById('new-address').value = '';
+            document.getElementById('address-search').value = '';
+            document.getElementById('new-photo').value = '';
+            document.getElementById('selected-lat-display').innerText = '-';
+            document.getElementById('selected-lon-display').innerText = '-';
+            selectedLocation = null;
+            tempPhotoBase64 = ""; 
+
+            btnSave.disabled = false;
+            btnSave.innerText = "Simpan Prospek";
+        }
+
+        function renderProspectList() {
+            const query = document.getElementById('search-query').value.toLowerCase();
+            const listContainer = document.getElementById('prospect-list');
+
+            const filtered = window.prospects.filter(p => {
+                return p.name.toLowerCase().includes(query) || p.floor.toLowerCase().includes(query) || p.type.toLowerCase().includes(query) || p.address.toLowerCase().includes(query);
+            });
+
+            if (window.prospects.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="p-8 text-center text-slate-400 bg-white">
+                        <i class="fa-solid fa-map-location-dot text-4xl mb-3 text-slate-300"></i>
+                        <p class="text-xs font-bold text-slate-500">Belum Ada Prospek Terdaftar</p>
+                        <p class="text-[10px] text-slate-400 mt-1">Gunakan tombol "Tambah Prospek" di atas untuk menambahkan alamat &amp; profil merchant baru.</p>
+                    </div>
+                `;
+                document.getElementById('list-count-label').innerText = "Belum ada prospek";
+                return;
+            }
+
+            document.getElementById('list-count-label').innerText = `Menampilkan ${filtered.length} dari ${window.prospects.length} prospek`;
+
+            listContainer.innerHTML = '';
+            filtered.forEach(p => {
+                const isSelected = p.id === window.currentSelectedId;
+                const stageObj = PIPELINE_STAGES.find(s => s.id === p.stage);
+                const score = calculatePriorityScore(p);
+
+                const formattedDist = p.distance >= 1000 ? `${(p.distance/1000).toFixed(2)} km` : `${Math.round(p.distance)} m`;
+
+                const item = document.createElement('div');
+                item.onclick = () => {
+                    window.currentSelectedId = p.id;
+                    updateDashboard();
+                };
+                item.className = `p-3 cursor-pointer flex items-center justify-between transition-all ${
+                    isSelected ? 'bg-blue-50 border-l-4 border-blue-700 pl-2' : 'hover:bg-slate-50 bg-white'
+                }`;
+
+                item.innerHTML = `
+                    <div class="flex-1 min-w-0 pr-2">
+                        <div class="flex items-center gap-1.5 mb-1 flex-wrap">
+                            <span class="text-[8px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                ${p.floor}
+                            </span>
+                            <span class="text-[8px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded font-mono">
+                                <i class="fa-solid fa-location-arrow"></i> ${formattedDist}
+                            </span>
+                        </div>
+                        <h4 class="font-bold text-xs text-slate-800 truncate">${p.name}</h4>
+                        <p class="text-[10px] text-slate-400 mt-0.5">${p.type} • <span class="italic text-[9px]">${p.address}</span></p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="text-right hidden sm:block">
+                            <span class="text-[9px] font-extrabold uppercase tracking-wider ${stageObj.text}">
+                                ${stageObj.name}
+                            </span>
+                            <div class="text-[9px] text-slate-400 mt-0.5">Skor: ${score}%</div>
+                        </div>
+                        <div class="w-3 h-10 rounded-full shadow-sm ${stageObj.color}"></div>
+                    </div>
+                `;
+                listContainer.appendChild(item);
+            });
+        }
+
+        async function updateActiveMerchantData(field, value) {
+            const active = window.prospects.find(p => p.id === window.currentSelectedId);
+            if (active) {
+                active[field] = parseInt(value);
+                if (field === 'omzet') {
+                    active.casaPotential = Math.round(active.omzet * 0.15);
+                }
+                updateDashboardOnlySliders();
+                renderStats();
+                drawRadarMap();
+                
+                // Debounce / Save progress to cloud database
+                if (window.saveProspectToCloud) {
+                    await window.saveProspectToCloud(active);
+                }
+            }
+        }
+
+        async function toggleActiveMerchantBoolean(field) {
+            const active = window.prospects.find(p => p.id === window.currentSelectedId);
+            if (active) {
+                active[field] = !active[field];
+                updateDashboard();
+                if (window.saveProspectToCloud) {
+                    await window.saveProspectToCloud(active);
+                }
+            }
+        }
+
+        async function changeActiveStage(direction) {
+            const active = window.prospects.find(p => p.id === window.currentSelectedId);
+            if (active) {
+                const nextStage = active.stage + direction;
+                if (nextStage >= 1 && nextStage <= 9) {
+                    active.stage = nextStage;
+                    updateDashboard();
+                    if (window.saveProspectToCloud) {
+                        await window.saveProspectToCloud(active);
+                    }
+                }
+            }
+        }
+
+        async function deleteSelectedProspect() {
+            if (!window.currentSelectedId) return;
+            if (confirm("Apakah Anda yakin ingin menghapus prospek ini dari database bersama?")) {
+                const targetId = window.currentSelectedId;
+                window.currentSelectedId = null;
+                if (window.deleteProspectFromCloud) {
+                    await window.deleteProspectFromCloud(targetId);
+                }
+            }
+        }
+
+        function updateDashboardOnlySliders() {
+            const active = window.prospects.find(p => p.id === window.currentSelectedId);
+            if (!active) return;
+
+            const score = calculatePriorityScore(active);
+            const priority = getPriorityLabel(score);
+
+            document.getElementById('active-score-value').innerText = `${score}%`;
+            document.getElementById('active-priority-badge').innerText = priority.name;
+            document.getElementById('active-priority-badge').className = `text-[8px] font-bold px-2 py-0.5 rounded-full mt-0.5 inline-block ${priority.color}`;
+
+            document.getElementById('val-omzet-label').innerText = `Rp ${(active.omzet / 1000000).toFixed(0)} Jt`;
+            document.getElementById('val-employees-label').innerText = `${active.employees} Org`;
+            document.getElementById('val-volume-label').innerText = `${active.dailyTxVolume} Tx`;
+        }
+
+        function updateDashboard() {
+            const active = window.prospects.find(p => p.id === window.currentSelectedId) || window.prospects[0];
+            
+            if (!active) {
+                window.currentSelectedId = null;
+                document.getElementById('active-name').innerText = "Tidak Ada Merchant Terpilih";
+                document.getElementById('active-type-badge').innerText = "PROSPEK";
+                document.getElementById('active-address-val').innerText = "-";
+                document.getElementById('active-distance-val').innerText = "-";
+                document.getElementById('active-score-value').innerText = "0%";
+                document.getElementById('active-priority-badge').innerText = "Nihil";
+                document.getElementById('active-priority-badge').className = "text-[8px] font-bold px-1.5 py-0.2 rounded-full mt-0.5 inline-block text-slate-500 bg-slate-100";
+                
+                document.getElementById('active-photo-display').classList.add('hidden');
+                document.getElementById('active-photo-placeholder').classList.remove('hidden');
+
+                document.getElementById('val-omzet-label').innerText = "Rp 0 Jt";
+                document.getElementById('val-employees-label').innerText = "0 Org";
+                document.getElementById('val-volume-label').innerText = "0 Tx";
+
+                document.getElementById('pipeline-stepper').innerHTML = '';
+                document.getElementById('active-stage-title').innerText = "Belum Ada Data";
+                document.getElementById('active-stage-desc').innerText = "Tambahkan prospek baru";
+                document.getElementById('btn-prev-stage').disabled = true;
+                document.getElementById('btn-next-stage').disabled = true;
+                document.getElementById('btn-delete-prospect').classList.add('hidden');
+
+                renderProspectList();
+                renderStats();
+                drawRadarMap();
+                return;
+            }
+
+            window.currentSelectedId = active.id;
+            const formattedDist = active.distance >= 1000 ? `${(active.distance/1000).toFixed(2)} km` : `${Math.round(active.distance)} m`;
+
+            document.getElementById('active-name').innerText = active.name;
+            document.getElementById('active-type-badge').innerText = active.type;
+            document.getElementById('active-address-val').innerText = active.address;
+            document.getElementById('active-distance-val').innerText = `${formattedDist} dari Graha Irama`;
+            document.getElementById('btn-delete-prospect').classList.remove('hidden');
+
+            const photoImg = document.getElementById('active-photo-display');
+            const photoPlaceholder = document.getElementById('active-photo-placeholder');
+            
+            if (active.photo) {
+                photoImg.src = active.photo;
+                photoImg.classList.remove('hidden');
+                photoPlaceholder.classList.add('hidden');
+            } else {
+                photoImg.src = "";
+                photoImg.classList.add('hidden');
+                photoPlaceholder.classList.remove('hidden');
+            }
+
+            document.getElementById('input-omzet').value = active.omzet;
+            document.getElementById('input-employees').value = active.employees;
+            document.getElementById('input-volume').value = active.dailyTxVolume;
+
+            updateDashboardOnlySliders();
+
+            const btnPayroll = document.getElementById('btn-payroll');
+            const btnLending = document.getElementById('btn-lending');
+
+            if (active.hasPayroll) {
+                btnPayroll.className = "flex items-center justify-between p-1.5 rounded-lg border text-left transition-all bg-blue-50 border-blue-400 text-blue-800";
+                btnPayroll.querySelector('.indicator-dot').className = "indicator-dot w-2 h-2 rounded-full bg-blue-600";
+            } else {
+                btnPayroll.className = "flex items-center justify-between p-1.5 rounded-lg border text-left transition-all bg-white border-slate-200 text-slate-400";
+                btnPayroll.querySelector('.indicator-dot').className = "indicator-dot w-2 h-2 rounded-full bg-slate-300";
+            }
+
+            if (active.hasLending) {
+                btnLending.className = "flex items-center justify-between p-1.5 rounded-lg border text-left transition-all bg-blue-50 border-blue-400 text-blue-800";
+                btnLending.querySelector('.indicator-dot').className = "indicator-dot w-2 h-2 rounded-full bg-blue-600";
+            } else {
+                btnLending.className = "flex items-center justify-between p-1.5 rounded-lg border text-left transition-all bg-white border-slate-200 text-slate-400";
+                btnLending.querySelector('.indicator-dot').className = "indicator-dot w-2 h-2 rounded-full bg-slate-300";
+            }
+
+            renderStepper(active);
+            renderPlaybook(active);
+            renderProspectList();
+            renderStats();
+            drawRadarMap();
+        }
+
+        function renderStepper(active) {
+            const stepperContainer = document.getElementById('pipeline-stepper');
+            stepperContainer.innerHTML = '';
+
+            PIPELINE_STAGES.forEach(stage => {
+                const isCompleted = active.stage >= stage.id;
+                const isCurrent = active.stage === stage.id;
+
+                const stepDiv = document.createElement('div');
+                stepDiv.className = `p-1.5 rounded-lg border text-center flex flex-col justify-between transition-all cursor-pointer ${
+                    isCurrent 
+                        ? 'bg-blue-50 border-blue-500 shadow-sm ring-1 ring-blue-500/10' 
+                        : isCompleted 
+                            ? `${stage.border} bg-white` 
+                            : 'border-slate-100 bg-slate-50/50 opacity-40'
+                }`;
+
+                stepDiv.onclick = async () => {
+                    active.stage = stage.id;
+                    updateDashboard();
+                    if (window.saveProspectToCloud) {
+                        await window.saveProspectToCloud(active);
+                    }
+                };
+
+                stepDiv.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center ${
+                            isCompleted ? stage.color + ' text-white' : 'bg-slate-200 text-slate-500'
+                        }">
+                            ${stage.id}
+                        </span>
+                        ${isCurrent ? '<span class="w-1.5 h-1.5 bg-blue-700 rounded-full animate-ping"></span>' : ''}
+                    </div>
+                    <p class="text-[8px] font-bold mt-2 truncate ${isCurrent ? 'text-blue-700' : isCompleted ? 'text-slate-800' : 'text-slate-400'}">
+                        ${stage.name}
+                    </p>
+                `;
+
+                stepperContainer.appendChild(stepDiv);
+            });
+
+            const currentStageObj = PIPELINE_STAGES.find(s => s.id === active.stage);
+            document.getElementById('active-stage-title').innerText = `(${active.stage}/9) ${currentStageObj.name}`;
+            document.getElementById('active-stage-title').className = `font-montserrat ${currentStageObj.text} font-bold`;
+            document.getElementById('active-stage-desc').innerText = currentStageObj.desc;
+
+            document.getElementById('btn-prev-stage').disabled = active.stage === 1;
+            document.getElementById('btn-next-stage').disabled = active.stage === 9;
+        }
+
+        function renderPlaybook(active) {
+            const pbData = EDUCATIONAL_PLAYBOOK[active.stage];
+            document.getElementById('playbook-title').innerText = pbData.title;
+            document.getElementById('playbook-action').innerText = pbData.action;
+            document.getElementById('playbook-pitch').innerText = `"${pbData.pitch}"`;
+
+            const checklistContainer = document.getElementById('playbook-checklist');
+            checklistContainer.innerHTML = '';
+            pbData.checklist.forEach(item => {
+                const checkDiv = document.createElement('div');
+                checkDiv.className = "flex items-start gap-1.5 text-[11px] text-slate-600";
+                checkDiv.innerHTML = `
+                    <i class="fa-solid fa-circle-check text-emerald-500 mt-0.5 flex-shrink-0"></i>
+                    <span>${item}</span>
+                `;
+                checklistContainer.appendChild(checkDiv);
+            });
+        }
+
+        function renderStats() {
+            const total = window.prospects.length;
+            if (total === 0) {
+                document.getElementById('stat-total').innerText = "0";
+                document.getElementById('stat-activated').innerText = "0";
+                document.getElementById('stat-conversion').innerText = "0%";
+                document.getElementById('stat-casa').innerText = "Rp 0 Jt";
+                document.getElementById('stat-avg-distance').innerText = "0 m";
+                return;
+            }
+
+            const activatedCount = window.prospects.filter(p => p.stage >= 6).length;
+            const conversionRate = ((activatedCount / total) * 100).toFixed(1);
+
+            const totalCASA = window.prospects.reduce((acc, p) => {
+                return acc + (p.stage >= 6 ? (p.omzet * 0.15) : 0);
+            }, 0);
+
+            const totalDistance = window.prospects.reduce((acc, p) => acc + p.distance, 0);
+            const avgDistance = totalDistance / total;
+            const formattedAvgDist = avgDistance >= 1000 ? `${(avgDistance/1000).toFixed(2)} km` : `${Math.round(avgDistance)} m`;
+
+            document.getElementById('stat-total').innerText = `${total} Prospek`;
+            document.getElementById('stat-activated').innerText = `${activatedCount} Merchant`;
+            document.getElementById('stat-conversion').innerText = `${conversionRate}%`;
+            document.getElementById('stat-casa').innerText = `Rp ${(totalCASA / 1000000).toFixed(1)} Jt`;
+            document.getElementById('stat-avg-distance').innerText = formattedAvgDist;
+        }
+
+        function clearRadarMarkers() {
+            radarMarkers.forEach(marker => marker.remove());
+            radarMarkers = [];
+        }
+
+        function clearRadarCircles() {
+            radarCircles.forEach(circle => circle.remove());
+            radarCircles = [];
+        }
+
+        function drawRadarMap() {
+            const mapContainer = document.getElementById('radarMap');
+            if (!mapContainer) return;
+
+            if (!radarMap) {
+                radarMap = L.map('radarMap', { zoomControl: true, scrollWheelZoom: true }).setView([GRAHA_IRAMA_LAT, GRAHA_IRAMA_LON], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(radarMap);
+
+                const grahaMarker = L.marker([GRAHA_IRAMA_LAT, GRAHA_IRAMA_LON], {
+                    icon: L.divIcon({
+                        html: '<div style="background:#d97706;border:2px solid white;border-radius:999px;width:14px;height:14px;"></div>',
+                        className: '',
+                        iconSize: [14, 14],
+                        iconAnchor: [7, 7]
+                    })
+                }).addTo(radarMap);
+                grahaMarker.bindTooltip('Graha Irama');
+            }
+
+            setTimeout(() => {
+                if (radarMap) {
+                    radarMap.invalidateSize();
+                }
+            }, 150);
+
+            clearRadarMarkers();
+            clearRadarCircles();
+
+            const radiusDistances = [500, 1000, 2000, 5000];
+            radiusDistances.forEach((distance, index) => {
+                const circle = L.circle([GRAHA_IRAMA_LAT, GRAHA_IRAMA_LON], {
+                    radius: distance,
+                    color: index === 0 ? '#60a5fa' : index === 1 ? '#34d399' : index === 2 ? '#f59e0b' : '#ef4444',
+                    weight: 1.5,
+                    fillColor: index === 0 ? '#60a5fa' : index === 1 ? '#34d399' : index === 2 ? '#f59e0b' : '#ef4444',
+                    fillOpacity: 0.08,
+                    dashArray: index === 0 ? '4 4' : '2 4',
+                    interactive: false
+                }).addTo(radarMap);
+
+                radarCircles.push(circle);
+            });
+
+            window.prospects.forEach(p => {
+                if (!p.lat || !p.lon) return;
+
+                const isSelected = p.id === window.currentSelectedId;
+                const color = isSelected ? '#1d4ed8' : (p.stage >= 6 ? '#10b981' : '#ef4444');
+
+                const marker = L.marker([p.lat, p.lon], {
+                    icon: L.divIcon({
+                        html: `<div style="background:${color};border:2px solid white;border-radius:999px;width:${isSelected ? 14 : 10}px;height:${isSelected ? 14 : 10}px;"></div>`,
+                        className: '',
+                        iconSize: [isSelected ? 14 : 10, isSelected ? 14 : 10],
+                        iconAnchor: [isSelected ? 7 : 5, isSelected ? 7 : 5]
+                    })
+                }).addTo(radarMap);
+
+                marker.bindTooltip(p.name);
+                marker.on('click', () => {
+                    window.currentSelectedId = p.id;
+                    updateDashboard();
+                    if (radarMap && p.lat && p.lon) {
+                        radarMap.panTo([p.lat, p.lon]);
+                    }
+                });
+                radarMarkers.push(marker);
+            });
+        }
+
+        function resizeMap() {
+            if (radarMap) {
+                radarMap.invalidateSize();
+            }
+            if (pickerMap) {
+                pickerMap.invalidateSize();
+            }
+        }
+
+        window.resetRadarMapView = function() {
+            if (radarMap) {
+                radarMap.setView([GRAHA_IRAMA_LAT, GRAHA_IRAMA_LON], 13);
+            }
+        };
+
+        window.addEventListener('resize', resizeMap);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                initAddressPicker();
+                drawRadarMap();
+            }, 250);
+        });
+
+        function changeSlide(direction) {
+            const targetSlide = window.currentSlide + direction;
+            if (targetSlide >= 1 && targetSlide <= 6) {
+                window.currentSlide = targetSlide;
+                renderSlide();
+            }
+        }
+
+        function renderSlide() {
+            for (let i = 1; i <= 6; i++) {
+                const slide = document.getElementById(`slide-${i}`);
+                if (slide) {
+                    if (i === window.currentSlide) {
+                        slide.classList.remove('hidden');
+                    } else {
+                        slide.classList.add('hidden');
+                    }
+                }
+            }
+
+            document.getElementById('slide-number').innerText = `${window.currentSlide} / 6`;
+            document.getElementById('btn-prev-slide').disabled = window.currentSlide === 1;
+            document.getElementById('btn-next-slide').disabled = window.currentSlide === 6;
+        }
+    </script>
+</body>
+</html>
